@@ -1,5 +1,5 @@
 const CONFIG = {
-  SUPABASE_URL: 'https://TU-PROYECTO.supabase.co',
-  SUPABASE_ANON_KEY: 'TU_CLAVE_ANON_PUBLICA',
-  ML_API_URL: 'http://127.0.0.1:8000'
+  SUPABASE_URL: 'https://zgguphcbycsnniqrjakf.supabase.co/rest/v1/',
+  SUPABASE_ANON_KEY: 'sb_publishable_SmpBFiP1KujPYcirqTaoiA_9okrvrPM',
+  ML_API_URL: 'https://tortilla-prices-up.onrender.com/'
 }
