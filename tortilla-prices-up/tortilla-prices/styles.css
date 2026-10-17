@@ -1,0 +1,22 @@
+/* Solo lo que Tailwind no cubre: vistas, modal, toast y estado de carga. */
+html, body { margin: 0; padding: 0; }
+body { overscroll-behavior: none; }
+::-webkit-scrollbar { display: none; }
+
+.view { display: none; }
+.view.active { display: block; }
+
+.nav-link.active { font-weight: 600; color: #052215; }
+
+.modal { display: none; position: fixed; inset: 0; z-index: 100; background: rgba(13, 28, 46, 0.45); align-items: center; justify-content: center; padding: 16px; }
+.modal.show { display: flex; }
+
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translate(-50%, 20px); background: #233144; color: #eaf1ff; padding: 10px 18px; border-radius: 8px; font-size: 13px; opacity: 0; pointer-events: none; transition: all .25s ease; z-index: 200; }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+td[contenteditable="true"]:focus { outline: 2px solid #1c3829; background: #eff4ff; }
+.loading { text-align: center; color: #727973; padding: 24px; }
+.ring-sel { box-shadow: 0 0 0 2px #052215; }
+
+@media print { header, .no-print { display: none !important; } main { padding-top: 0 !important; } }
+[hidden] { display: none !important; }

@@ -1,0 +1,5 @@
+const CONFIG = {
+  SUPABASE_URL: 'https://TU-PROYECTO.supabase.co',
+  SUPABASE_ANON_KEY: 'TU_CLAVE_ANON_PUBLICA',
+  ML_API_URL: 'http://127.0.0.1:8000'
+}
