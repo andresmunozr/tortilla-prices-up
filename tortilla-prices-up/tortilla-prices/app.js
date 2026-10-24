@@ -26,7 +26,7 @@ function showView(name) {
   $(`view-${name}`).classList.add('active')
 
   $('filter-bar').hidden = name === 'table'
-  document.querySelector('main').style.paddingTop = name === 'table' ? '88px' : '112px'
+  document.querySelector('main').style.paddingTop = name === 'table' ? '56px' : '100px'
   $('f-channel').hidden = name !== 'dashboard'
   $('f-horizon').hidden = name !== 'dashboard'
 
@@ -121,71 +121,37 @@ const Charts = (() => {
 })()
 
 // ─── TABLERO EJECUTIVO ───────────────────────────────────────────────────────
-const KPI = 'p-space-lg rounded-xl bg-surface-container-lowest border border-surface-container shadow-sm'
-
 function renderDashboard() {
   const { meta, kpis: k, ranking } = SUMMARY
-  $('hdr-range').textContent = `Datos: ${meta.y0}–${meta.y1}`
-  $('hdr-model').innerHTML = `<span>${escapeHtml(meta.model)}</span><span class="text-surface-container-high">•</span><span>RMSE validación 2025: ±${money(k.val.rmse)} MXN</span>`
-  $('d-eyebrow').textContent = `Supervisión de canasta básica • Datos hasta ${meta.last}`
-  $('d-intro').textContent = `${num(meta.n_obs)} registros de mercado en ${meta.n_states} entidades y ${meta.n_cities} ciudades. Proyección a 3, 6 y 12 meses a partir de la propia serie de precios, sin fuentes externas.`
-  $('rank-title').textContent = `Ranking territorial de precios (${meta.n_states} estados)`
-  $('th-mean').textContent = `Media ${meta.y0}-${meta.y1}`
+  $('d-intro').textContent = `${num(meta.n_obs)} registros en ${meta.n_states} entidades y ${meta.n_cities} ciudades. Proyección a 3, 6 y 12 meses a partir de la serie de precios.`
+  $('rank-title').textContent = `Ranking territorial (${meta.n_states} estados)`
+  $('th-mean').textContent = `Media ${meta.y0}–${meta.y1}`
   $('th-gap').textContent = `Brecha vs nacional (${money(k.nat25)})`
-
-  $('d-kpis').innerHTML = `
-    <div class="${KPI}">
-      <div class="flex justify-between mb-1"><span class="text-outline text-label-sm uppercase tracking-wider">Promedio nacional 2025</span><span class="text-secondary text-label-sm">${signed(k.yoy)}% vs 2024</span></div>
-      <div class="flex items-baseline gap-1 my-space-xs"><span class="font-headline text-display-lg text-primary">${money(k.nat25)}</span><span class="text-body-sm text-outline">MXN/kg</span></div>
-      <p class="text-body-sm text-on-surface-variant">Promedio simple de las ${meta.n_states} entidades, todos los canales.</p></div>
-    <div class="${KPI}">
-      <div class="flex justify-between mb-1"><span class="text-outline text-label-sm uppercase tracking-wider">Dispersión territorial</span><span class="text-outline text-label-sm">Brecha ${money(k.spread)}</span></div>
-      <div class="flex items-baseline justify-between my-space-xs">
-        <div><span class="font-headline text-headline-lg text-primary">${money(k.pmin.p2025)}</span><span class="block text-label-sm text-outline">${escapeHtml(k.pmin.name)} (mín)</span></div>
-        <span class="text-outline">→</span>
-        <div class="text-right"><span class="font-headline text-headline-lg text-secondary">${money(k.pmax.p2025)}</span><span class="block text-label-sm text-outline">${escapeHtml(k.pmax.name)} (máx)</span></div></div>
-      <p class="text-body-sm text-on-surface-variant">Promedio 2025 por entidad.</p></div>
-    <div class="${KPI}">
-      <div class="flex justify-between mb-1"><span class="text-outline text-label-sm uppercase tracking-wider">Volumen muestral</span><span class="text-outline text-label-sm">${meta.n_states} entidades</span></div>
-      <div class="flex items-baseline gap-1 my-space-xs"><span class="font-headline text-display-lg text-primary">${num(meta.n_obs)}</span><span class="text-body-sm text-outline">observaciones</span></div>
-      <p class="text-body-sm text-on-surface-variant">${meta.n_cities} ciudades • ${meta.null_pct.toFixed(1)}% sin precio o con precio 0, excluidos.</p></div>
-    <div class="${KPI}">
-      <div class="flex justify-between mb-1"><span class="text-outline text-label-sm uppercase tracking-wider">Precisión del modelo</span><span class="text-primary text-label-sm">Validado 2025</span></div>
-      <div class="flex items-baseline gap-1 my-space-xs"><span class="font-headline text-display-lg text-primary">±${money(k.val.rmse)}</span><span class="text-body-sm text-outline">RMSE MXN/kg</span></div>
-      <p class="text-body-sm text-on-surface-variant">Serie nacional. Error absoluto medio (MAE): ${money(k.val.mae)}.</p></div>`
 
   const [a, b] = ranking
   $('d-side').innerHTML = `
-    <div class="${KPI} flex flex-col gap-space-md">
-      <div class="flex items-center justify-between pb-space-xs border-b border-surface-container"><span class="text-label-sm uppercase tracking-wider text-error flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-error"></span>Presión de precios</span><span class="text-label-sm text-outline">Mayor costo 2025</span></div>
-      <div class="flex flex-col gap-1"><h3 class="font-headline text-headline-sm text-primary">Entidades con mayor precio</h3>
-        <p class="text-body-sm text-on-surface-variant leading-relaxed">${escapeHtml(a.name)} (${money(a.p2025)}) y ${escapeHtml(b.name)} (${money(b.p2025)}) superan el promedio nacional en <span class="font-semibold text-primary">${signed(a.gap)}%</span> y <span class="font-semibold text-primary">${signed(b.gap)}%</span>.</p></div>
-      <div class="p-space-sm rounded-lg bg-surface-container-low border border-surface-container flex flex-col gap-2">
-        <div class="flex justify-between text-body-sm"><span class="text-outline">Brecha de canales (nacional):</span><span class="font-semibold text-secondary">Δ ${money(k.gap)} /kg</span></div>
-        <div class="flex justify-between text-body-sm"><span class="text-on-surface-variant">Mom &amp; Pop (Tradicional)</span><span class="font-semibold text-primary">${money(k.mp)}</span></div>
-        <div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden"><div class="bg-primary h-full" style="width:100%"></div></div>
-        <div class="flex justify-between text-body-sm mt-1"><span class="text-on-surface-variant">Big Retail (Autoservicio)</span><span class="font-semibold text-primary">${money(k.br)}</span></div>
-        <div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden"><div class="bg-outline h-full" style="width:${Math.round(k.br / k.mp * 100)}%"></div></div></div>
-      <div class="text-body-sm text-outline border-t border-surface-container pt-space-xs">Estimaciones exclusivas de la serie de precios, sin cruce con variables externas.</div></div>
-    <div class="p-space-lg rounded-xl bg-surface-container-low border border-surface-container flex flex-col gap-2">
-      <span class="text-label-sm uppercase tracking-wider text-primary">Trazabilidad técnica</span>
-      <div class="flex flex-col gap-1.5 text-body-sm divide-y divide-surface-container">
-        <div class="flex justify-between py-1"><span class="text-outline">Modelo:</span><span class="font-medium text-primary">${escapeHtml(meta.model)}</span></div>
-        <div class="flex justify-between py-1"><span class="text-outline">Validación cerrada:</span><span class="font-medium text-primary">Ajuste hasta dic-2024 → 2025</span></div>
-        <div class="flex justify-between py-1"><span class="text-outline">Último dato:</span><span class="font-medium text-primary">${meta.last}</span></div>
-        <div class="flex justify-between py-1"><span class="text-outline">Intervalo:</span><span class="font-medium text-primary">±1.96·RMSE (backtest)</span></div></div></div>`
+    <div>
+      <p class="text-label-sm uppercase tracking-wider text-outline">Mayor costo 2025</p>
+      <p class="mt-1 text-on-surface">${escapeHtml(a.name)} ${money(a.p2025)} · ${escapeHtml(b.name)} ${money(b.p2025)}</p>
+      <p class="text-outline mt-0.5">${signed(a.gap)}% y ${signed(b.gap)}% vs nacional</p>
+    </div>
+    <div>
+      <p class="text-label-sm uppercase tracking-wider text-outline">Canales (nacional)</p>
+      <p class="mt-1 text-on-surface">Mom &amp; Pop ${money(k.mp)} · Big Retail ${money(k.br)}</p>
+      <p class="text-outline mt-0.5">Brecha ${money(k.gap)} /kg</p>
+    </div>`
 
   $('rankBody').innerHTML = ranking.map(r => {
     const tone = r.gap > 10 ? 'secondary' : (r.gap > 0 ? 'primary' : 'outline')
     const bar = r.gap > 10 ? 'bg-secondary' : (r.gap > 0 ? 'bg-primary' : 'bg-tertiary')
     return `<tr class="state-row hover:bg-surface-container-low/70 transition-colors cursor-pointer" data-state="${escapeHtml(r.state)}" data-cat="${r.cat}">
-      <td class="py-2.5 px-3 text-outline font-medium">#${String(r.rank).padStart(2, '0')}</td>
+      <td class="py-2.5 pr-3 text-outline">#${String(r.rank).padStart(2, '0')}</td>
       <td class="py-2.5 px-3 font-semibold text-primary">${escapeHtml(r.name)}</td>
-      <td class="py-2.5 px-3 text-right text-outline">${money(r.mean_all)}</td>
-      <td class="py-2.5 px-3 text-right font-bold text-${r.gap > 10 ? 'secondary' : 'primary'}">${money(r.p2025)}</td>
-      <td class="py-2.5 px-3"><div class="flex items-center gap-2"><div class="w-20 bg-surface-container h-1.5 rounded-full overflow-hidden"><div class="${bar} h-full" style="width:${r.bar}%"></div></div><span class="text-label-sm font-semibold text-${tone}">${signed(r.gap)}%</span></div></td>
+      <td class="py-2.5 px-3 text-right text-outline tabular-nums">${money(r.mean_all)}</td>
+      <td class="py-2.5 px-3 text-right font-semibold tabular-nums text-${r.gap > 10 ? 'secondary' : 'primary'}">${money(r.p2025)}</td>
+      <td class="py-2.5 px-3"><div class="flex items-center gap-2"><div class="w-16 bg-surface-container h-px overflow-visible relative"><div class="${bar} h-1 -mt-0.5" style="width:${r.bar}%"></div></div><span class="text-label-sm font-semibold text-${tone}">${signed(r.gap)}%</span></div></td>
       <td class="py-2.5 px-3 text-outline">${escapeHtml(r.cov)}</td>
-      <td class="py-2.5 px-3 text-right"><button type="button" class="select-btn px-2.5 py-1 rounded border border-surface-container text-primary hover:bg-primary hover:text-on-primary text-label-sm transition-colors">Ver proyección</button></td></tr>`
+      <td class="py-2.5 pl-3 text-right"><button type="button" class="select-btn text-primary text-label-sm hover:underline">Ver</button></td></tr>`
   }).join('')
   document.querySelectorAll('.state-row').forEach(row => row.addEventListener('click', () => setState(row.dataset.state)))
 }
@@ -194,21 +160,21 @@ function paintForecast() {
   if (!FORECAST) return
   $('activeName').textContent = FORECAST.name
   const row = SUMMARY.ranking.find(r => r.state === S.state)
-  $('activeDetails').textContent = `• ${row ? row.cov : 'todas las entidades'} • último dato ${FORECAST.last_date}: ${money(FORECAST.last_value)}`
+  $('activeDetails').textContent = `${row ? row.cov : 'todas las entidades'} · último dato ${FORECAST.last_date}: ${money(FORECAST.last_value)}`
   $('fc-cards').innerHTML = [[3, '3 meses'], [6, '6 meses'], [12, '12 meses']].map(([h, lab]) => {
     const f = FORECAST.horizons[h]
-    return `<div class="p-space-md rounded-lg bg-surface-container-low border border-surface-container flex flex-col gap-1 ${h === S.horizon ? 'ring-sel' : ''}">
-      <div class="flex justify-between text-label-sm"><span class="text-primary uppercase">${lab}</span><span class="text-outline">${f.label}</span></div>
-      <div class="flex items-baseline gap-1 my-0.5"><span class="font-headline text-headline-xl text-primary">${money(f.v)}</span><span class="text-body-sm text-outline">MXN/kg</span></div>
-      <div class="flex justify-between text-body-sm text-outline"><span>RMSE ±${f.rmse.toFixed(2)}</span><span class="text-primary font-semibold">${signed(f.pct)}%</span></div></div>`
+    return `<div class="bg-background px-space-md py-space-sm flex flex-col gap-0.5 ${h === S.horizon ? 'ring-sel' : ''}">
+      <div class="flex justify-between text-label-sm text-outline"><span>${lab}</span><span>${f.label}</span></div>
+      <div class="flex items-baseline gap-1"><span class="font-headline text-headline-lg text-primary">${money(f.v)}</span><span class="text-body-sm text-outline">MXN/kg</span></div>
+      <div class="text-body-sm text-outline">${signed(f.pct)}%</div></div>`
   }).join('')
   Charts.forecast($('fcChart'), FORECAST, S.horizon)
   document.querySelectorAll('.state-row').forEach(row => {
     const on = row.dataset.state === S.state, b = row.querySelector('.select-btn')
     row.classList.toggle('bg-surface-container-low', on)
     b.textContent = on ? 'Activo' : 'Ver proyección'
-    b.className = 'select-btn px-2.5 py-1 rounded text-label-sm transition-colors ' +
-      (on ? 'bg-primary text-on-primary font-semibold' : 'border border-surface-container text-primary hover:bg-primary hover:text-on-primary')
+    b.className = 'select-btn text-label-sm ' +
+      (on ? 'font-semibold text-primary' : 'text-outline hover:text-primary hover:underline')
   })
 }
 
@@ -233,24 +199,24 @@ function setState(state) {
 // ─── CANALES & BRECHAS ───────────────────────────────────────────────────────
 function renderChannels() {
   const { meta, kpis: k, channel_table: t } = SUMMARY
-  $('c-intro').textContent = `Diferencia de precio entre la tortillería tradicional (Mom & Pop) y el autoservicio (Big Retail), sobre ${num(meta.n_obs)} registros.`
+  $('c-intro').textContent = `Diferencia de precio entre tortillería tradicional (Mom & Pop) y autoservicio (Big Retail). ${num(meta.n_obs)} registros.`
   $('c-kpis').innerHTML = `
-    <div class="bg-surface-container-lowest rounded-xl p-space-md border border-surface-container">
-      <div class="flex justify-between text-body-sm text-on-surface-variant"><span class="text-label-sm uppercase tracking-wider">Tradicional</span><span class="px-1.5 py-0.5 rounded bg-surface-container font-semibold">${num(k.n_mp)} obs</span></div>
-      <div class="mt-2 flex items-baseline gap-1"><span class="font-headline text-2xl font-bold">${money(k.mp)}</span><span class="text-body-sm text-on-surface-variant">MXN/kg</span></div>
-      <div class="mt-2 flex justify-between text-body-sm text-outline pt-1 border-t border-surface-container-low"><span>Media 2025</span><span class="text-error font-semibold">${signed(k.vs07)}% vs 2007</span></div></div>
-    <div class="bg-surface-container-lowest rounded-xl p-space-md border border-surface-container">
-      <div class="flex justify-between text-body-sm text-on-surface-variant"><span class="text-label-sm uppercase tracking-wider">Autoservicio</span><span class="px-1.5 py-0.5 rounded bg-surface-container font-semibold">${num(k.n_br)} obs</span></div>
-      <div class="mt-2 flex items-baseline gap-1"><span class="font-headline text-2xl font-bold">${money(k.br)}</span><span class="text-body-sm text-on-surface-variant">MXN/kg</span></div>
-      <div class="mt-2 flex justify-between text-body-sm text-outline pt-1 border-t border-surface-container-low"><span>Media 2025</span><span>Promedio simple de entidades</span></div></div>
-    <div class="bg-surface-container-lowest rounded-xl p-space-md border border-surface-container">
-      <div class="flex justify-between text-body-sm text-on-surface-variant"><span class="text-label-sm uppercase tracking-wider">Brecha promedio</span><span class="px-1.5 py-0.5 rounded bg-secondary-fixed text-on-secondary-fixed font-semibold">${signed(k.gap_pct)}%</span></div>
-      <div class="mt-2 flex items-baseline gap-1"><span class="font-headline text-2xl font-bold text-secondary">+${money(k.gap)}</span><span class="text-body-sm text-on-surface-variant">MXN/kg</span></div>
-      <div class="mt-2 text-body-sm text-outline pt-1 border-t border-surface-container-low">Sobreprecio en el canal tradicional</div></div>
-    <div class="bg-surface-container-lowest rounded-xl p-space-md border border-surface-container">
-      <div class="flex justify-between text-body-sm text-on-surface-variant"><span class="text-label-sm uppercase tracking-wider">Paridad muestral</span><span class="px-1.5 py-0.5 rounded bg-tertiary-fixed text-on-tertiary-fixed font-semibold">${k.p_mp.toFixed(1)}% / ${k.p_br.toFixed(1)}%</span></div>
-      <div class="mt-2 flex items-baseline gap-1"><span class="font-headline text-2xl font-bold">${num(meta.n_obs)}</span><span class="text-body-sm text-on-surface-variant">filas</span></div>
-      <div class="mt-2 flex justify-between text-body-sm text-outline pt-1 border-t border-surface-container-low"><span>Con precio válido: ${(100 - meta.null_pct).toFixed(1)}%</span><span>${meta.null_pct.toFixed(1)}% excluido</span></div></div>`
+    <div class="bg-background px-space-md py-space-sm">
+      <p class="text-label-sm uppercase tracking-wider text-outline">Tradicional</p>
+      <p class="mt-1 font-headline text-headline-lg">${money(k.mp)} <span class="text-body-sm font-body font-normal text-outline">MXN/kg</span></p>
+      <p class="text-body-sm text-outline mt-0.5">${signed(k.vs07)}% vs 2007</p></div>
+    <div class="bg-background px-space-md py-space-sm">
+      <p class="text-label-sm uppercase tracking-wider text-outline">Autoservicio</p>
+      <p class="mt-1 font-headline text-headline-lg">${money(k.br)} <span class="text-body-sm font-body font-normal text-outline">MXN/kg</span></p>
+      <p class="text-body-sm text-outline mt-0.5">Media 2025</p></div>
+    <div class="bg-background px-space-md py-space-sm">
+      <p class="text-label-sm uppercase tracking-wider text-outline">Brecha</p>
+      <p class="mt-1 font-headline text-headline-lg text-secondary">+${money(k.gap)} <span class="text-body-sm font-body font-normal text-outline">MXN/kg</span></p>
+      <p class="text-body-sm text-outline mt-0.5">${signed(k.gap_pct)}% sobreprecio tradicional</p></div>
+    <div class="bg-background px-space-md py-space-sm">
+      <p class="text-label-sm uppercase tracking-wider text-outline">Muestra</p>
+      <p class="mt-1 font-headline text-headline-lg">${num(meta.n_obs)}</p>
+      <p class="text-body-sm text-outline mt-0.5">${k.p_mp.toFixed(0)}% / ${k.p_br.toFixed(0)}% por canal</p></div>`
   $('c-reading').innerHTML = `Las entidades con mayor brecha en pesos son <strong>${escapeHtml(t[0].name)}</strong> (+${money(t[0].gap)}), <strong>${escapeHtml(t[1].name)}</strong> (+${money(t[1].gap)}) y <strong>${escapeHtml(t[2].name)}</strong> (+${money(t[2].gap)}). Son candidatas para analizar con más detalle el acceso al canal de autoservicio.`
   drawGapTable('gap')
 }
@@ -261,21 +227,21 @@ function drawGapTable(by) {
   $('gapBody').innerHTML = rows.map(r => {
     const badge = r.risk === 'Alto' ? 'bg-error-container text-on-error-container' : (r.risk === 'Medio' ? 'bg-secondary-fixed text-on-secondary-fixed' : 'bg-surface-container text-on-surface-variant')
     return `<tr class="gap-row hover:bg-surface-container-low/50 transition-colors cursor-pointer" data-state="${escapeHtml(r.state)}">
-      <td class="py-2.5 px-3 font-medium">${escapeHtml(r.name)}</td>
+      <td class="py-2.5 pr-3 font-medium">${escapeHtml(r.name)}</td>
       <td class="py-2.5 px-3 text-right tabular-nums">${money(r.mp)}</td>
       <td class="py-2.5 px-3 text-right tabular-nums text-on-surface-variant">${money(r.br)}</td>
-      <td class="py-2.5 px-3 text-right font-bold text-secondary tabular-nums">+${money(r.gap)}</td>
+      <td class="py-2.5 px-3 text-right font-semibold text-secondary tabular-nums">+${money(r.gap)}</td>
       <td class="py-2.5 px-3 text-right font-semibold tabular-nums ${r.risk === 'Alto' ? 'text-error' : 'text-on-surface-variant'}">${signed(r.pct)}%</td>
       <td class="py-2.5 px-3 text-right text-outline tabular-nums">${num(r.n)}</td>
-      <td class="py-2.5 px-3 text-center"><span class="px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant">${r.cities}</span></td>
-      <td class="py-2.5 px-3 text-center"><span class="px-2 py-0.5 rounded font-semibold ${badge}">${r.risk}</span></td></tr>`
+      <td class="py-2.5 px-3 text-center text-on-surface-variant">${r.cities}</td>
+      <td class="py-2.5 pl-3 text-center"><span class="text-label-sm font-semibold ${badge} px-1.5 py-0.5">${r.risk}</span></td></tr>`
   }).join('')
   document.querySelectorAll('.gap-row').forEach(row => row.addEventListener('click', () => {
     setState(row.dataset.state)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }))
-  $('sortGap').className = 'px-2 py-1 rounded ' + (by === 'gap' ? 'bg-surface-container text-primary font-medium' : 'text-on-surface-variant hover:bg-surface-container')
-  $('sortAlpha').className = 'px-2 py-1 rounded ' + (by === 'alpha' ? 'bg-surface-container text-primary font-medium' : 'text-on-surface-variant hover:bg-surface-container')
+  $('sortGap').className = 'px-2 py-0.5 ' + (by === 'gap' ? 'text-primary font-semibold border-b-2 border-primary' : 'text-outline hover:text-primary')
+  $('sortAlpha').className = 'px-2 py-0.5 ' + (by === 'alpha' ? 'text-primary font-semibold border-b-2 border-primary' : 'text-outline hover:text-primary')
 }
 
 // ─── CONTROLES DE FILTRO ─────────────────────────────────────────────────────
@@ -292,7 +258,7 @@ $('horizonBtns').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return
   S.horizon = +b.dataset.h
   document.querySelectorAll('#horizonBtns button').forEach(x => {
-    x.className = 'px-2.5 py-0.5 rounded text-body-sm ' + (x === b ? 'font-semibold bg-surface-container-lowest text-primary shadow-sm' : 'text-outline hover:text-primary')
+    x.className = 'px-2 py-0.5 text-body-sm ' + (x === b ? 'font-semibold text-primary border-b-2 border-primary' : 'text-outline hover:text-primary')
   })
   paintForecast()
 })
@@ -308,7 +274,7 @@ $('rankFilters').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return
   rankFilter = b.dataset.f
   document.querySelectorAll('#rankFilters button').forEach(x => {
-    x.className = 'px-3 py-1 rounded text-label-sm ' + (x === b ? 'font-semibold bg-surface-container-lowest text-primary shadow-sm' : 'text-outline hover:text-primary')
+    x.className = 'px-2 py-0.5 text-label-sm ' + (x === b ? 'font-semibold text-primary border-b-2 border-primary' : 'text-outline hover:text-primary')
   })
   filterRows()
 })
