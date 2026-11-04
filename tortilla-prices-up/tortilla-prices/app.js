@@ -21,14 +21,21 @@ async function api(path) {
 
 // ─── NAVEGACIÓN ──────────────────────────────────────────────────────────────
 function showView(name) {
+  const target = $(`view-${name}`)
+  if (!target) return
+
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'))
   document.querySelectorAll('.nav-link').forEach(b => b.classList.toggle('active', b.dataset.view === name))
-  $(`view-${name}`).classList.add('active')
+  target.classList.add('active')
 
-  $('filter-bar').hidden = name === 'table'
-  document.querySelector('main').style.paddingTop = name === 'table' ? '56px' : '100px'
-  $('f-channel').hidden = name !== 'dashboard'
-  $('f-horizon').hidden = name !== 'dashboard'
+  const filterBar = $('filter-bar')
+  if (filterBar) filterBar.hidden = name === 'table'
+  const main = document.querySelector('main')
+  if (main) main.style.paddingTop = name === 'table' ? '56px' : '100px'
+  const fChannel = $('f-channel')
+  const fHorizon = $('f-horizon')
+  if (fChannel) fChannel.hidden = name !== 'dashboard'
+  if (fHorizon) fHorizon.hidden = name !== 'dashboard'
 
   if (name === 'table') renderTable(1)
   if (name === 'channels' && CHANNELS) Charts.lines($('chChart'), CHANNELS)
@@ -86,7 +93,6 @@ const Charts = (() => {
     let s = f.s +
       `<line x1="${f.x(last)}" x2="${f.x(last)}" y1="${T}" y2="${H - B}" stroke="#c2c8c1" stroke-dasharray="3 3"/>` +
       `<text x="${f.x(last) - 6}" y="${T + 10}" text-anchor="end" font-size="9.5" fill="${C.axis}">Último dato ${d.last_date}</text>` +
-      `<polygon points="${poly}" fill="${C.secC}" fill-opacity="0.2"/>` +
       `<path d="${path(hist, f)}" fill="none" stroke="${C.primary}" stroke-width="2" stroke-linejoin="round"/>` +
       `<path d="${path(fc, f)}" fill="none" stroke="${C.sec}" stroke-width="2.5" stroke-dasharray="4 3"/>` +
       `<circle cx="${f.x(last)}" cy="${f.y(vals[last])}" r="3.5" fill="${C.primary}"/>`
@@ -128,18 +134,7 @@ function renderDashboard() {
   $('th-mean').textContent = `Media ${meta.y0}–${meta.y1}`
   $('th-gap').textContent = `Brecha vs nacional (${money(k.nat25)})`
 
-  const [a, b] = ranking
-  $('d-side').innerHTML = `
-    <div>
-      <p class="text-label-sm uppercase tracking-wider text-outline">Mayor costo 2025</p>
-      <p class="mt-1 text-on-surface">${escapeHtml(a.name)} ${money(a.p2025)} · ${escapeHtml(b.name)} ${money(b.p2025)}</p>
-      <p class="text-outline mt-0.5">${signed(a.gap)}% y ${signed(b.gap)}% vs nacional</p>
-    </div>
-    <div>
-      <p class="text-label-sm uppercase tracking-wider text-outline">Canales (nacional)</p>
-      <p class="mt-1 text-on-surface">Mom &amp; Pop ${money(k.mp)} · Big Retail ${money(k.br)}</p>
-      <p class="text-outline mt-0.5">Brecha ${money(k.gap)} /kg</p>
-    </div>`
+  $('d-side').innerHTML = ''
 
   $('rankBody').innerHTML = ranking.map(r => {
     const tone = r.gap > 10 ? 'secondary' : (r.gap > 0 ? 'primary' : 'outline')
@@ -186,38 +181,87 @@ async function loadForecast() {
 async function loadChannels() {
   CHANNELS = await api(`/channels?state=${encodeURIComponent(S.state)}`)
   $('chartName').textContent = CHANNELS.name
-  $('corrBadge').textContent = 'r = ' + CHANNELS.corr
+  $('corrBadge').textContent = ''
   Charts.lines($('chChart'), CHANNELS)
+  renderChannels()
 }
 
 function setState(state) {
   S.state = state
-  $('stateSelect').value = state
+  const stateSelect = $('stateSelect')
+  if (stateSelect) stateSelect.value = state
   Promise.all([loadForecast(), loadChannels()]).catch(showApiError)
 }
 
 // ─── CANALES & BRECHAS ───────────────────────────────────────────────────────
 function renderChannels() {
   const { meta, kpis: k, channel_table: t } = SUMMARY
-  $('c-intro').textContent = `Diferencia de precio entre tortillería tradicional (Mom & Pop) y autoservicio (Big Retail). ${num(meta.n_obs)} registros.`
+  let selected = {
+    mp: k.mp,
+    br: k.br,
+    gap: k.gap,
+    gap_pct: k.gap_pct,
+    name: 'Nacional ponderado',
+    trend: S.state === 'ALL' ? '' : signed(k.vs07) + '% vs 2007',
+    sample: num(meta.n_obs),
+    sampleText: S.state === 'ALL' ? '' : `${k.p_mp.toFixed(0)}% / ${k.p_br.toFixed(0)}% por canal`
+  }
+
+  if (S.state !== 'ALL' && CHANNELS) {
+    const lastMp = Number(CHANNELS.mp[CHANNELS.mp.length - 1])
+    const lastBr = Number(CHANNELS.br[CHANNELS.br.length - 1])
+    const ix = t.find(r => r.state === S.state)
+    selected = {
+      mp: Number.isFinite(lastMp) ? lastMp : (ix ? ix.mp : k.mp),
+      br: Number.isFinite(lastBr) ? lastBr : (ix ? ix.br : k.br),
+      gap: (Number.isFinite(lastMp) && Number.isFinite(lastBr) ? lastMp - lastBr : (ix ? ix.gap : k.gap)),
+      gap_pct: (Number.isFinite(lastMp) && Number.isFinite(lastBr) && lastBr !== 0 ? (lastMp / lastBr - 1) * 100 : (ix ? ix.pct : k.gap_pct)),
+      name: ix ? ix.name : (SUMMARY.states.find(s => s.value === S.state)?.name ?? S.state),
+      trend: '',
+      sample: num(ix ? ix.n : 0),
+      sampleText: ix ? 'Registros del estado' : 'Registros del estado'
+    }
+  } else if (S.state !== 'ALL') {
+    const ix = t.find(r => r.state === S.state)
+    if (ix) {
+      selected = {
+        mp: ix.mp,
+        br: ix.br,
+        gap: ix.gap,
+        gap_pct: ix.pct,
+        name: ix.name,
+        trend: '',
+        sample: num(ix.n),
+        sampleText: 'Registros del estado'
+      }
+    }
+  }
+
+  $('c-intro').textContent = `Diferencia de precio entre tortillería tradicional (Mom & Pop) y autoservicio (Big Retail) para ${selected.name}. ${num(meta.n_obs)} registros.`
   $('c-kpis').innerHTML = `
     <div class="bg-background px-space-md py-space-sm">
       <p class="text-label-sm uppercase tracking-wider text-outline">Tradicional</p>
-      <p class="mt-1 font-headline text-headline-lg">${money(k.mp)} <span class="text-body-sm font-body font-normal text-outline">MXN/kg</span></p>
-      <p class="text-body-sm text-outline mt-0.5">${signed(k.vs07)}% vs 2007</p></div>
+      <p class="mt-1 font-headline text-headline-lg">${money(selected.mp)} <span class="text-body-sm font-body font-normal text-outline">MXN/kg</span></p>
+      <p class="text-body-sm text-outline mt-0.5">${selected.trend}</p></div>
     <div class="bg-background px-space-md py-space-sm">
       <p class="text-label-sm uppercase tracking-wider text-outline">Autoservicio</p>
-      <p class="mt-1 font-headline text-headline-lg">${money(k.br)} <span class="text-body-sm font-body font-normal text-outline">MXN/kg</span></p>
-      <p class="text-body-sm text-outline mt-0.5">Media 2025</p></div>
+      <p class="mt-1 font-headline text-headline-lg">${money(selected.br)} <span class="text-body-sm font-body font-normal text-outline">MXN/kg</span></p>
+      <p class="text-body-sm text-outline mt-0.5">${selected.trend}</p></div>
     <div class="bg-background px-space-md py-space-sm">
       <p class="text-label-sm uppercase tracking-wider text-outline">Brecha</p>
-      <p class="mt-1 font-headline text-headline-lg text-secondary">+${money(k.gap)} <span class="text-body-sm font-body font-normal text-outline">MXN/kg</span></p>
-      <p class="text-body-sm text-outline mt-0.5">${signed(k.gap_pct)}% sobreprecio tradicional</p></div>
+      <p class="mt-1 font-headline text-headline-lg text-secondary">+${money(selected.gap)} <span class="text-body-sm font-body font-normal text-outline">MXN/kg</span></p>
+      <p class="text-body-sm text-outline mt-0.5"></p></div>
     <div class="bg-background px-space-md py-space-sm">
       <p class="text-label-sm uppercase tracking-wider text-outline">Muestra</p>
-      <p class="mt-1 font-headline text-headline-lg">${num(meta.n_obs)}</p>
-      <p class="text-body-sm text-outline mt-0.5">${k.p_mp.toFixed(0)}% / ${k.p_br.toFixed(0)}% por canal</p></div>`
-  $('c-reading').innerHTML = `Las entidades con mayor brecha en pesos son <strong>${escapeHtml(t[0].name)}</strong> (+${money(t[0].gap)}), <strong>${escapeHtml(t[1].name)}</strong> (+${money(t[1].gap)}) y <strong>${escapeHtml(t[2].name)}</strong> (+${money(t[2].gap)}). Son candidatas para analizar con más detalle el acceso al canal de autoservicio.`
+      <div class="mt-1 flex items-baseline gap-1">
+        <span class="font-headline text-headline-lg">${selected.sample}</span>
+        <span class="text-body-sm text-outline">registros</span>
+      </div>
+    </div>`
+
+  if (t && t.length) {
+    $('c-reading').innerHTML = ''
+  }
   drawGapTable('gap')
 }
 
@@ -282,158 +326,19 @@ $('stateSearch').addEventListener('input', filterRows)
 $('sortGap').addEventListener('click', () => drawGapTable('gap'))
 $('sortAlpha').addEventListener('click', () => drawGapTable('alpha'))
 
-// ─── REGISTROS (SUPABASE) ────────────────────────────────────────────────────
-const TABLE = 'tortilla_prices'
-const PAGE_SIZE = 100
-let currentPage = 1
-let totalPages = 1
-let totalRecords = 0
-
-const supabaseConfigured = typeof supabase !== 'undefined' && CONFIG.SUPABASE_URL && !CONFIG.SUPABASE_URL.includes('TU-PROYECTO')
-const db = supabaseConfigured ? supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY) : null
-
-function tableMessage(text) {
-  $('table-body').innerHTML = `<tr><td colspan="9" class="loading">${escapeHtml(text)}</td></tr>`
-}
-
-async function renderTable(page = 1) {
-  if (!db) { tableMessage('Configura SUPABASE_URL y SUPABASE_ANON_KEY en config.js (ver README).'); return }
-  currentPage = page
-  tableMessage('Cargando...')
-  const from = (page - 1) * PAGE_SIZE
-  let q = db.from(TABLE).select('*', { count: 'estimated' }).order('id', { ascending: true }).range(from, from + PAGE_SIZE - 1)
-  if ($('t-state').value) q = q.eq('state', $('t-state').value)
-  if ($('t-store').value) q = q.eq('store_type', $('t-store').value)
-  const { data, error, count } = await q
-  if (error) { tableMessage(`Error: ${error.message}`); return }
-
-  totalRecords = count || 0
-  totalPages = Math.max(1, Math.ceil(totalRecords / PAGE_SIZE))
-  if (!data.length) { tableMessage('No hay datos disponibles'); updatePagination(); return }
-
-  const tbody = $('table-body')
-  tbody.innerHTML = ''
-  data.forEach(row => {
-    const tr = document.createElement('tr')
-    tr.className = 'hover:bg-surface-container-low/50'
-    ;['id', 'state', 'city', 'year', 'month', 'day', 'store_type'].forEach(col => {
-      const td = document.createElement('td')
-      td.className = 'py-2 px-3 ' + (col === 'id' ? 'text-outline' : '')
-      td.textContent = row[col]
-      tr.appendChild(td)
-    })
-    const price = document.createElement('td')
-    price.className = 'py-2 px-3 text-right font-semibold tabular-nums'
-    price.textContent = row.price_per_kilogram ?? ''
-    price.contentEditable = 'true'
-    price.addEventListener('blur', () => saveCell(row.id, price.textContent.trim(), row.price_per_kilogram))
-    tr.appendChild(price)
-
-    const act = document.createElement('td')
-    act.className = 'py-2 px-3 text-right whitespace-nowrap'
-    const edit = document.createElement('button')
-    edit.textContent = 'Editar'
-    edit.className = 'px-2 py-1 rounded border border-surface-container text-primary text-label-sm mr-1 hover:bg-surface-container-low'
-    edit.addEventListener('click', () => openModal(row.id))
-    const del = document.createElement('button')
-    del.textContent = 'Eliminar'
-    del.className = 'px-2 py-1 rounded border border-surface-container text-error text-label-sm hover:bg-error-container'
-    del.addEventListener('click', () => deleteRecord(row.id))
-    act.append(edit, del)
-    tr.appendChild(act)
-    tbody.appendChild(tr)
-  })
-  updatePagination()
-}
-
-function updatePagination() {
-  $('current-page').textContent = currentPage
-  $('total-pages').textContent = totalPages
-  $('total-records').textContent = num(totalRecords)
-  $('prev-btn').disabled = currentPage === 1
-  $('next-btn').disabled = currentPage >= totalPages
-}
-function prevPage() { if (currentPage > 1) renderTable(currentPage - 1) }
-function nextPage() { if (currentPage < totalPages) renderTable(currentPage + 1) }
-$('t-state').addEventListener('change', () => renderTable(1))
-$('t-store').addEventListener('change', () => renderTable(1))
-
-async function saveCell(id, value, previous) {
-  if (String(previous ?? '') === value) return
-  const price = value === '' ? null : Number(value)
-  if (price !== null && (isNaN(price) || price < 0 || price > 100)) { showToast('Valor inválido (0–100)'); renderTable(currentPage); return }
-  const { error } = await db.from(TABLE).update({ price_per_kilogram: price }).eq('id', id)
-  if (error) { showToast('Error al guardar'); console.error(error); return }
-  showToast('Guardado ✓')
-}
-
-// Modal agregar / editar (un solo formulario)
-async function openModal(id = null) {
-  if (!db) { showToast('Configura Supabase en config.js'); return }
-  $('record-form').reset()
-  $('rec-id').value = ''
-  $('modal-title').textContent = id ? 'Editar registro' : 'Agregar registro'
-  if (id) {
-    const { data, error } = await db.from(TABLE).select('*').eq('id', id).single()
-    if (error) { showToast('Error al cargar registro'); return }
-    $('rec-id').value = data.id
-    $('rec-state').value = data.state
-    $('rec-city').value = data.city
-    $('rec-year').value = data.year
-    $('rec-month').value = data.month
-    $('rec-day').value = data.day
-    $('rec-store').value = data.store_type
-    $('rec-price').value = data.price_per_kilogram ?? ''
-  }
-  $('record-modal').classList.add('show')
-}
-function closeModal() { $('record-modal').classList.remove('show'); $('record-form').reset() }
-
-async function nextId() {
-  const { data, error } = await db.from(TABLE).select('id').order('id', { ascending: false }).limit(1)
-  return error || !data.length ? 1 : data[0].id + 1
-}
-
-$('record-form').addEventListener('submit', async e => {
-  e.preventDefault()
-  const f = new FormData(e.target)
-  const record = {
-    state: f.get('state'), city: f.get('city').trim(),
-    year: Number(f.get('year')), month: Number(f.get('month')), day: Number(f.get('day')),
-    store_type: f.get('store_type'),
-    price_per_kilogram: f.get('price_per_kilogram') === '' ? null : Number(f.get('price_per_kilogram')),
-  }
-  const id = f.get('id')
-  const { error } = id
-    ? await db.from(TABLE).update(record).eq('id', id)
-    : await db.from(TABLE).insert({ id: await nextId(), ...record })
-  if (error) { showToast('Error al guardar registro'); console.error(error); return }
-  showToast(id ? 'Cambios guardados ✓' : 'Registro agregado ✓')
-  closeModal()
-  renderTable(currentPage)
-})
-
-async function deleteRecord(id) {
-  if (!confirm('¿Estás seguro de que deseas eliminar este registro? Esta acción no se puede deshacer.')) return
-  const { error } = await db.from(TABLE).delete().eq('id', id)
-  if (error) { showToast('Error al eliminar registro'); console.error(error); return }
-  showToast('Registro eliminado ✓')
-  if (currentPage === totalPages && totalRecords % PAGE_SIZE === 1) currentPage = Math.max(1, currentPage - 1)
-  renderTable(currentPage)
-}
-
 // ─── INIT ────────────────────────────────────────────────────────────────────
 async function init() {
-  $('f-channel').hidden = false
+  const fChannel = $('f-channel')
+  if (fChannel) fChannel.hidden = false
   try {
     SUMMARY = await api('/summary')
   } catch (err) { showApiError(err); return }
+
   const opts = SUMMARY.states.map(s => `<option value="${escapeHtml(s.value)}">${escapeHtml(s.name)}</option>`).join('')
-  $('stateSelect').insertAdjacentHTML('beforeend', opts)
-  $('t-state').insertAdjacentHTML('beforeend', opts)
-  $('rec-state').innerHTML = opts
+  const stateSelect = $('stateSelect')
+  if (stateSelect) stateSelect.insertAdjacentHTML('beforeend', opts)
+
   renderDashboard()
-  renderChannels()
   setState('ALL')
 }
 init()

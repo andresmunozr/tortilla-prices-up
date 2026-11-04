@@ -31,8 +31,6 @@
         </div>
         <nav class="flex items-center gap-space-lg text-body-sm">
           <button class="nav-link active text-on-surface-variant hover:text-primary transition-colors" data-view="dashboard" onclick="showView('dashboard')">Tablero</button>
-          <button class="nav-link text-on-surface-variant hover:text-primary transition-colors" data-view="channels" onclick="showView('channels')">Canales</button>
-          <button class="nav-link text-on-surface-variant hover:text-primary transition-colors" data-view="table" onclick="showView('table')">Registros</button>
         </nav>
       </div>
       <button onclick="window.print()" class="no-print hidden sm:inline-flex px-3 py-1.5 rounded border border-outline-variant text-primary text-body-sm hover:bg-surface-container-low transition-colors" type="button">Exportar</button>
@@ -61,7 +59,7 @@
       <!-- ═════════ VISTA TABLERO ═════════ -->
       <div id="view-dashboard" class="view active flex flex-col gap-space-2xl">
         <div class="flex flex-col gap-2">
-          <h1 class="font-headline text-headline-xl text-primary tracking-tight">Monitoreo del precio de tortilla</h1>
+          <h1 class="font-headline text-headline-xl text-primary tracking-tight">Monitoreo del Precio de la Tortilla en México</h1>
           <p id="d-intro" class="text-on-surface-variant max-w-2xl">Cargando datos…</p>
         </div>
 
@@ -74,7 +72,6 @@
             <div class="flex items-center gap-space-md text-label-sm text-outline">
               <span class="flex items-center gap-1.5"><span class="w-4 h-px bg-primary"></span>Histórico</span>
               <span class="flex items-center gap-1.5"><span class="w-4 border-t border-dashed border-secondary"></span>Pronóstico</span>
-              <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 bg-secondary-container/40"></span>IC 95%</span>
             </div>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-px bg-outline-variant/60 border border-outline-variant/60" id="fc-cards"></div>
@@ -86,7 +83,7 @@
           <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-space-md border-b border-outline-variant/50 pb-space-sm">
             <div>
               <h2 id="rank-title" class="font-headline text-headline-md text-primary tracking-tight">Ranking territorial</h2>
-              <p class="text-body-sm text-on-surface-variant mt-0.5">Promedio 2025. Una fila actualiza la proyección.</p>
+              <p class="text-body-sm text-on-surface-variant mt-0.5"></p>
             </div>
             <div class="flex items-center gap-space-sm flex-wrap">
               <div id="rankFilters" class="inline-flex gap-1">
@@ -99,14 +96,14 @@
           <div class="overflow-x-auto"><table class="w-full text-left text-body-sm border-collapse">
             <thead><tr class="border-b border-outline-variant text-outline text-label-sm uppercase tracking-wider"><th class="py-2 pr-3">Rank</th><th class="py-2 px-3">Entidad</th><th class="py-2 px-3 text-right" id="th-mean">Media histórica</th><th class="py-2 px-3 text-right">Precio 2025</th><th class="py-2 px-3" id="th-gap">Brecha vs nacional</th><th class="py-2 px-3">Cobertura</th><th class="py-2 pl-3 text-right">Acción</th></tr></thead>
             <tbody id="rankBody" class="divide-y divide-outline-variant/50"></tbody></table></div>
-          <p class="text-body-sm text-outline">Mayor costo = 8 más caras; más accesibles = 8 más baratas (2025).</p>
+          <p class="text-body-sm text-outline"></p>
         </section>
       </div>
 
       <!-- ═════════ VISTA CANALES ═════════ -->
       <div id="view-channels" class="view flex flex-col gap-space-2xl">
         <div class="flex flex-col gap-2">
-          <h1 class="font-headline text-headline-xl text-primary tracking-tight">Canales y brechas</h1>
+          <h1 class="font-headline text-headline-xl text-primary tracking-tight">Canales y Brechas</h1>
           <p id="c-intro" class="text-on-surface-variant max-w-2xl"></p>
         </div>
         <section id="c-kpis" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-outline-variant/60 border border-outline-variant/60"></section>
@@ -114,12 +111,12 @@
           <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-space-sm border-b border-outline-variant/50 pb-space-sm">
             <div>
               <h2 class="font-headline text-headline-md text-primary">Evolución por canal — <span id="chartName">Nacional ponderado</span></h2>
-              <p class="text-body-sm text-on-surface-variant mt-0.5">Precio medio mensual (MXN/kg), media móvil de 12 meses.</p>
+              <p class="text-body-sm text-on-surface-variant mt-0.5">Precio medio mensual (MXN/kg).</p>
             </div>
             <div class="flex items-center gap-4 text-label-sm text-outline">
               <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-secondary"></span>Mom &amp; Pop</span>
               <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-primary-container"></span>Big Retail</span>
-              <span id="corrBadge" class="text-primary font-semibold">r = —</span>
+              <span id="corrBadge" class="text-primary font-semibold" hidden></span>
             </div>
           </div>
           <svg id="chChart" class="w-full h-auto" viewBox="0 0 900 280"></svg>
@@ -141,29 +138,6 @@
           <p class="text-body-sm text-outline">Alto = cuartil superior de % sobreprecio; medio = entre la mediana y ese cuartil; bajo = bajo la mediana.</p>
           <p id="c-reading" class="text-body-sm text-on-surface-variant max-w-3xl leading-relaxed"></p>
         </section>
-      </div>
-
-      <!-- ═════════ VISTA REGISTROS (Supabase) ═════════ -->
-      <div id="view-table" class="view flex flex-col gap-space-lg">
-        <div class="flex flex-col md:flex-row md:items-end justify-between gap-space-md border-b border-outline-variant/50 pb-space-sm">
-          <div>
-            <h1 class="font-headline text-headline-xl text-primary tracking-tight">Registros</h1>
-            <p class="text-body-sm text-on-surface-variant mt-1">Edite el precio en la celda; se guarda al salir.</p>
-          </div>
-          <div class="flex items-center gap-space-sm flex-wrap">
-            <select id="t-state" class="bg-transparent text-primary text-body-sm py-1 border-0 border-b border-outline-variant focus:outline-none focus:border-primary"><option value="">Todas las entidades</option></select>
-            <select id="t-store" class="bg-transparent text-primary text-body-sm py-1 border-0 border-b border-outline-variant focus:outline-none focus:border-primary"><option value="">Ambos canales</option><option>Mom and Pop Store</option><option>Big Retail Store</option></select>
-            <button class="px-3 py-1.5 rounded bg-primary text-on-primary text-body-sm font-semibold hover:bg-primary-container transition-colors" onclick="openModal()">Agregar</button>
-          </div>
-        </div>
-        <div class="overflow-x-auto"><table class="w-full text-left border-collapse text-body-sm">
-          <thead><tr class="border-b border-outline-variant text-outline text-label-sm uppercase tracking-wider"><th class="py-2 pr-3">ID</th><th class="py-2 px-3">Estado</th><th class="py-2 px-3">Ciudad</th><th class="py-2 px-3">Año</th><th class="py-2 px-3">Mes</th><th class="py-2 px-3">Día</th><th class="py-2 px-3">Canal</th><th class="py-2 px-3 text-right">Precio/kg</th><th class="py-2 pl-3 text-right">Acciones</th></tr></thead>
-          <tbody id="table-body" class="divide-y divide-outline-variant/50"><tr><td colspan="9" class="loading">Cargando datos...</td></tr></tbody></table></div>
-        <div class="flex items-center justify-between text-body-sm text-on-surface-variant">
-          <button id="prev-btn" class="px-3 py-1 text-primary disabled:opacity-40" onclick="prevPage()" disabled>Anterior</button>
-          <span>Página <span id="current-page">1</span> de <span id="total-pages">1</span> · <span id="total-records">0</span> registros</span>
-          <button id="next-btn" class="px-3 py-1 text-primary disabled:opacity-40" onclick="nextPage()">Siguiente</button>
-        </div>
       </div>
 
     </div>
@@ -194,8 +168,7 @@
 
   <footer class="w-full">
     <div class="max-w-6xl mx-auto px-margin py-space-lg flex flex-col sm:flex-row items-center justify-between gap-space-sm text-body-sm text-outline border-t border-outline-variant/50">
-      <div><span class="font-semibold text-primary">PPKTM</span> · Precio de un kilo de tortilla</div>
-      <div>SNIIM / Secretaría de Economía</div>
+      <div><span class="font-semibold text-primary">PPKTM</span> · Predictor del Precio de un Kilo de Tortilla en México</div>
     </div>
   </footer>
 
